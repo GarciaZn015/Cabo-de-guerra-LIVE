@@ -38,6 +38,14 @@ const server = http.createServer((req, res) => {
 const wss = new WebSocketServer({ server });
 let tiktok = null;
 let currentUser = '';
+let contagem = {};
+setInterval(() => {
+  if (!tiktok?.isConnected) return;
+  const resumo = Object.entries(contagem).map(([k, v]) => `${k}:${v}`).join(' ') || 'nenhum evento';
+  console.log('[eventos no último minuto]', resumo);
+  broadcast({ type: 'debug', text: resumo });
+  contagem = {};
+}, 60000);
 
 function broadcast(msg) {
   const txt = JSON.stringify(msg);
@@ -64,9 +72,17 @@ async function connectTikTok(username) {
   const conn = new TikTokLiveConnection(username, { signApiKey: SIGN_API_KEY, enableExtendedGiftInfo: false, processInitialData: false });
   tiktok = conn;
 
-  conn.on(WebcastEvent.CHAT, (d) => broadcast({ type: 'chat', user: userOf(d), text: d.comment || '' }));
+  conn.on(WebcastEvent.CHAT, (d) => {
+    const text = d.comment ?? d.content ?? d.text ?? '';
+    console.log(`[comentário] ${userOf(d).name}: ${text}`);
+    broadcast({ type: 'chat', user: userOf(d), text: String(text) });
+  });
+  // Diagnóstico: mostra no log todo tipo de evento que chega da live
+  conn.on(ControlEvent.DECODED_DATA, (tipo) => { const k = typeof tipo === 'string' ? tipo : (tipo?.type || tipo?.method || 'msg'); contagem[k] = (contagem[k] || 0) + 1; });
+  conn.on(ControlEvent.ERROR, (e) => console.error('[erro tiktok]', e?.message || e));
 
   conn.on(WebcastEvent.GIFT, (d) => {
+    console.log(`[presente] ${userOf(d).name}: ${d.giftDetails?.giftName || d.giftId} x${d.repeatCount || 1}`);
     const det = d.giftDetails || {};
     const ext = d.extendedGiftInfo || {};
     const giftType = det.giftType ?? d.giftType;
