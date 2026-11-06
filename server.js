@@ -13,15 +13,25 @@ const SIGN_API_KEY = process.env.EULER_API_KEY || undefined; // opcional (aument
 
 // ---------- Servidor de arquivos (serve a pasta public) ----------
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.mp3': 'audio/mpeg' };
+// Procura os arquivos na pasta "public" e, se não achar, na raiz do projeto
+const PASTAS = [path.join(__dirname, 'public'), __dirname];
 const server = http.createServer((req, res) => {
-  const url = req.url.split('?')[0];
-  const file = path.join(__dirname, 'public', url === '/' ? 'index.html' : url);
-  if (!file.startsWith(path.join(__dirname, 'public'))) { res.writeHead(403); return res.end(); }
-  fs.readFile(file, (err, data) => {
-    if (err) { res.writeHead(404); return res.end('Não encontrado'); }
-    res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
-    res.end(data);
-  });
+  const url = decodeURIComponent(req.url.split('?')[0]);
+  const nome = url === '/' ? 'index.html' : url;
+  if (/\.\.|server\.js|package/.test(nome)) { res.writeHead(403); return res.end(); }
+  const tenta = (i) => {
+    if (i >= PASTAS.length) {
+      res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return res.end('Não encontrado: o index.html precisa estar na pasta "public" ou na raiz do repositório.');
+    }
+    const file = path.join(PASTAS[i], nome);
+    fs.readFile(file, (err, data) => {
+      if (err) return tenta(i + 1);
+      res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream' });
+      res.end(data);
+    });
+  };
+  tenta(0);
 });
 
 // ---------- WebSocket: jogo <-> servidor ----------
