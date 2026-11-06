@@ -12,7 +12,7 @@ const PORT = process.env.PORT || 3000;
 const SIGN_API_KEY = process.env.EULER_API_KEY || undefined; // opcional (aumenta o limite de conexões)
 
 // ---------- Servidor de arquivos (serve a pasta public) ----------
-const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.mp3': 'audio/mpeg' };
+const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.css': 'text/css', '.png': 'image/png', '.mp3': 'audio/mpeg', '.json': 'application/manifest+json' };
 // Procura os arquivos na pasta "public" e, se não achar, na raiz do projeto
 const PASTAS = [path.join(__dirname, 'public'), __dirname];
 const server = http.createServer((req, res) => {
