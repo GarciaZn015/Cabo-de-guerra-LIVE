@@ -60,7 +60,8 @@ async function connectTikTok(username) {
   currentUser = username;
   broadcast({ type: 'status', ok: false, text: `Conectando em @${username}...` });
 
-  const conn = new TikTokLiveConnection(username, { signApiKey: SIGN_API_KEY, enableExtendedGiftInfo: true, processInitialData: false });
+  // enableExtendedGiftInfo precisa ficar false: com true o Euler Stream exige plano pago
+  const conn = new TikTokLiveConnection(username, { signApiKey: SIGN_API_KEY, enableExtendedGiftInfo: false, processInitialData: false });
   tiktok = conn;
 
   conn.on(WebcastEvent.CHAT, (d) => broadcast({ type: 'chat', user: userOf(d), text: d.comment || '' }));
