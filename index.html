@@ -220,6 +220,9 @@ function vence(time){
 
 function evento(m){
   if (m.type==='status'){ setStatus(m.ok, m.text); return; }
+  if (m.type==='debug'){ console.log('eventos', m.text); return; }
+  if (m.type==='chat') cont.c++; if (m.type==='gift') cont.g++;
+  if (m.type==='chat'||m.type==='gift'||m.type==='like') atualizaContagem();
   const u = m.user || {id:'anon',name:'Anônimo'};
   if (m.type==='chat'){
     const t = detectaTime(m.text||'');
@@ -250,7 +253,9 @@ function evento(m){
 }
 
 /* ===================== UI ===================== */
-function setStatus(ok, txt){ $('status').classList.toggle('ok', !!ok); $('status').querySelector('span').textContent = txt; }
+const cont = {c:0, g:0}; let baseStatus = '';
+function atualizaContagem(){ $('status').querySelector('span').textContent = `${baseStatus} · 💬${cont.c} 🎁${cont.g}`; }
+function setStatus(ok, txt){ baseStatus = txt; $('status').classList.toggle('ok', !!ok); $('status').querySelector('span').textContent = txt; }
 function renderPlacar(){ $('sp').textContent = S.placar.P; $('se').textContent = S.placar.E; }
 function renderTops(){
   for (const [t,id] of [['P','tp'],['E','te']]){
