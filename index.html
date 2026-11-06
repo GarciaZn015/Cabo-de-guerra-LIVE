@@ -4,6 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0b1410">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cabo de Guerra">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
 <title>Cabo de Guerra Live</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@500;700;900&display=swap" rel="stylesheet">
@@ -73,6 +79,8 @@
   @keyframes sobe{0%{opacity:0;transform:translateY(16px) scale(.9)}12%{opacity:1;transform:none}80%{opacity:1}100%{opacity:0;transform:translateY(-30px)}}
 
   /* Painel de controle */
+  #gear,#status{transition:opacity .4s}
+  #app.limpo #gear,#app.limpo #status{opacity:0;pointer-events:none}
   #gear{position:absolute;top:calc(env(safe-area-inset-top) + 10px);right:10px;z-index:5;width:40px;height:40px;border-radius:50%;
     border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.5);color:#fff;font-size:18px}
   #status{position:absolute;top:calc(env(safe-area-inset-top) + 18px);left:12px;z-index:5;font:700 11px Inter;color:var(--muted);
@@ -141,6 +149,10 @@
       <button class="btn gold" data-t="tt">🎵 TikTok</button>
       <button class="btn" id="bsim">▶ Simular público</button>
       <button class="btn" id="bzera">Zerar placar</button>
+    </div>
+    <label>Tela</label>
+    <div class="row">
+      <button class="btn go" id="bfull">⛶ Tela cheia</button>
     </div>
     <p class="hint">Inicie a live no TikTok (Mobile Gaming) antes de conectar. Toque fora do painel pra fechar.</p>
   </div>
@@ -420,6 +432,39 @@ $('bsim').onclick = () => {
     else evento({type:'gift', user:u, giftName: Math.random()<.5?'Rose':'TikTok', count: 1+(Math.random()*5|0), diamonds: Math.random()<.85?1:30});
   }, 220);
 };
+
+/* ===================== TELA CHEIA / MODO LIVE ===================== */
+const app = $('app');
+async function telaCheia(){
+  const el = document.documentElement;
+  try{
+    if (!document.fullscreenElement && !document.webkitFullscreenElement){
+      await (el.requestFullscreen ? el.requestFullscreen({navigationUI:'hide'}) : el.webkitRequestFullscreen?.());
+      try{ await screen.orientation.lock('portrait'); }catch{}
+    } else {
+      await (document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen?.());
+    }
+  }catch{ feed('No iPhone: Compartilhar → Adicionar à Tela de Início'); }
+  manterAcesa();
+  painel.classList.remove('on');
+}
+$('bfull').onclick = telaCheia;
+const atualizaBotao = () => { $('bfull').textContent = (document.fullscreenElement||document.webkitFullscreenElement) ? '✕ Sair da tela cheia' : '⛶ Tela cheia'; };
+document.addEventListener('fullscreenchange', atualizaBotao); document.addEventListener('webkitfullscreenchange', atualizaBotao);
+
+// Mantém a tela acesa durante a live
+let wake = null;
+async function manterAcesa(){ try{ if ('wakeLock' in navigator && !wake){ wake = await navigator.wakeLock.request('screen'); wake.addEventListener('release',()=>wake=null); } }catch{} }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState==='visible') manterAcesa(); });
+document.addEventListener('pointerdown', manterAcesa, {once:true});
+
+// Esconde a engrenagem e o status depois de 4s sem toque (toque na tela pra mostrar)
+let timerLimpo;
+function mostraControles(){
+  app.classList.remove('limpo'); clearTimeout(timerLimpo);
+  timerLimpo = setTimeout(() => { if (!painel.classList.contains('on')) app.classList.add('limpo'); }, 4000);
+}
+document.addEventListener('pointerdown', mostraControles); mostraControles();
 
 renderPlacar(); renderTops();
 </script>
