@@ -98,7 +98,8 @@ async function connectTikTok(username) {
   } catch (err) {
     console.error('Falha ao conectar:', err?.message || err);
     const offline = /offline|not live|UserOffline/i.test(String(err?.message || err?.constructor?.name || ''));
-    broadcast({ type: 'status', ok: false, text: offline ? `@${username} não está ao vivo. Inicie a live primeiro.` : 'Não conectou. Confira o @ e tente de novo.' });
+    const detalhe = String(err?.message || err?.constructor?.name || err).slice(0, 160);
+    broadcast({ type: 'status', ok: false, text: offline ? `@${username} não está ao vivo (TikTok respondeu offline). Erro: ${detalhe}` : `Não conectou. Erro: ${detalhe}` });
     if (tiktok === conn) tiktok = null;
   }
 }
